@@ -1,12 +1,16 @@
 /*
- *  Plugin que valida los formularios - 21/06/2012
- *  Modificacion: 22/11/2012 --- Agregada funcionalidad de numero minimo de aciertos
+ *  Plugin que valida los formularios v2- 27/12/2021
+ *  UNAM - DGCCH
  *  Jonathan Bailon Segura
  *  jonn59@gmail.com
  */
-jQuery.fn.validForm = function (options) {
-  var settings = jQuery.extend(
-    {
+
+;(function ($, window, document, undefined) {
+  "use strict";
+
+  // Create the defaults once
+  var pluginName = "validForm",
+    defaults = {
       retro: ".retro",
       errorDialog: false,
       errorForm: false,
@@ -14,82 +18,115 @@ jQuery.fn.validForm = function (options) {
       errorBorder: "solid 1px #C82C27",
       numAcierto: 0,
       textoRetro: "#textoRetro",
-    },
-    options
-  );
+      respuestas: ""
+    };
 
-  var raiz = jQuery(this);
+  // The actual plugin constructor
+  function Plugin(element, options) {
+    this.element = element;
+    this.settings = $.extend({}, defaults, options);
+    this._defaults = defaults;
+    this._name = pluginName;
+    this.init();
+  }
 
-  /*
-   * Funcion que valida los elementos inputs del formulario
-   */
+  // Avoid Plugin.prototype conflicts
+  $.extend(Plugin.prototype, {
+    init: function () {
+      let settings = this.settings;
+      let form = this;
+      const dialog = jQuery(settings.errorDialog, this.element);
+      const errorForm = jQuery (settings.errorForm, this.element);
 
-  function vFormulario(form, acierto) {
-    var retorno = new Array();
-    retorno[0] = true;
-    retorno[1] = 0;
+      jQuery(settings.retro, this.element).hide();
+      dialog.hide();
 
-    // Obtemos todos los inputs text dentro del array
-    var $inputs = jQuery(":input[type=text], textarea", form);
+      
+      
+      jQuery(this.element).submit(function(event) {
+        let respuesta = form.vFormulario(this);
 
-    $inputs.each(function () {
-      var $este = jQuery(this);
-      if (!isVacio($este.val())) {
-        retorno[0] = false;
-        if (settings.numAcierto == 0) {
-          $este.css({
-            background: settings.errorBackground,
-            border: settings.errorBorder,
-          });
+        event.preventDefault();
+        jQuery(settings.textoRetro, this).hide();
+        
+        if ( respuesta[0] || ( ( respuesta[1]  >= settings.numAcierto ) && ( settings.numAcierto > 0 ) ) ) {
+          jQuery(settings.retro, this).fadeIn("slow");
+          jQuery(":submit, .alert-danger", this).hide();
+        } else {
+          if (settings.errorDialog != false) {
+              dialog.addClass([ "alert", "alert-danger" ]).fadeIn("slow");
+          }
+          if (settings.errorForm != false) {
+            errorForm.addClass([ "alert", "alert-danger" ]).fadeIn("slow");
+              
+          }
         }
-      } else {
-        $este.css({
-          // quitamos el fondo rojo si este esta lleno
-          background: "",
-          border: "",
-        });
-        retorno[1]++;
+
+        if( respuesta[1]  < settings.numAcierto ){
+          //jQuery(this).append("<div id='errorRetro' class='dialog' title='Completa todas las respuestas' style='display:none'><p>Escribe por lo menos "+settings.numAcierto+" diferencias para que puedas recibir retroalimentación.</p></div>")
+          jQuery( settings.textoRetro ).dialog("open");
+          //jQuery("div#errorRetro",this).dialog();
+        }
+      });
+    },
+    /*
+	    * Funcion que valida los elementos inputs del formulario
+	  */
+    vFormulario: function (form) {
+      let retorno = [true,0];
+      let settings = this.settings;
+      let elem = this;
+      let cont = 0;
+      
+      // Obtemos todos los inputs text dentro del array
+      const $inputs = jQuery(':input[type=text], textarea', form);
+
+      $inputs.each(function() {
+        let $este = jQuery(this);
+        let vacio = true;
+      
+        jQuery.trim($este.val()).length <= 0  ? vacio = false : vacio = true;
+
+        if ( !vacio ) {
+          retorno[0] = false;
+          if ( settings.numAcierto == 0 ){
+            $este.css({
+              'background' : settings.errorBackground,
+              'border' : settings.errorBorder
+            });
+          }
+        } else {
+          $este.css({ // quitamos el fondo rojo si este esta lleno
+            'background' : '',
+            'border' : ''
+          });
+
+          if(settings.respuestas != ""){
+            if (elem.removeAccents(settings.respuestas[cont].toLowerCase()) == elem.removeAccents($este.val().toLowerCase())) {
+              $este.addClass("success");
+              $este.siblings(".retro").addClass("success");
+            } else {
+              $este.addClass("error");
+              $este.siblings(".retro").addClass("error");
+            }
+            cont++;
+          }
+          retorno[1]++;
+        }
+      }); 
+
+      return retorno;
+    },
+    removeAccents: function (str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    },
+  });
+
+ $.fn[pluginName] = function (options) {
+    return this.each(function () {
+      if (!$.data(this, "plugin_" + pluginName)) {
+        $.data(this, "plugin_" + pluginName, new Plugin(this, options));
       }
     });
-    return retorno;
-  }
-
-  /*
-   * Funcion que valida que un campo sea completado
-   * @retun bool
-   */
-  function isVacio(val) {
-    if (jQuery.trim(val).length <= 0) return false;
-    return true;
-  }
-
-  jQuery(settings.retro, this).hide();
-  //jQuery(settings.textoRetro,this).hide();
-
-  jQuery(this).submit(function (event) {
-    event.preventDefault();
-    jQuery(settings.textoRetro, this).hide();
-    respuesta = vFormulario(this);
-    if ( respuesta[0] || (respuesta[1] >= settings.numAcierto && settings.numAcierto > 0 )) {
-      jQuery(settings.retro, this).fadeIn("slow");
-      jQuery(":submit", this).hide();
-    } else {
-      if (settings.errorDialog != false) {
-        jQuery(settings.errorDialog).addClass("dialog");
-        jQuery(settings.errorDialog).dialog("open");
-      }
-      if (settings.errorForm != false) {
-        jQuery(settings.errorForm, this).fadeIn("slow");
-      }
-    }
-    if (respuesta[1] < settings.numAcierto) {
-      //jQuery(this).append("<div id='errorRetro' class='dialog' title='Completa todas las respuestas' style='display:none'><p>Escribe por lo menos "+settings.numAcierto+" diferencias para que puedas recibir retroalimentación.</p></div>")
-      jQuery(settings.textoRetro).dialog("open");
-      //jQuery("div#errorRetro",this).dialog();
-    }
-  });
-};
-
-jQuery(document).ready(function () {
-  jQuery("#dialog").dialog({ autoOpen: false, modal: true });
-});
+  };
+})(jQuery, window, document);

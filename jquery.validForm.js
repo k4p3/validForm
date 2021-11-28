@@ -36,7 +36,8 @@
       let settings = this.settings;
       let form = this;
       const dialog = jQuery(settings.errorDialog, this.element);
-      const errorForm = jQuery (settings.errorForm, this.element);
+      const errorForm = jQuery(settings.errorForm, this.element);
+      const textoRetro = jQuery(settings.textoRetro, this.element);
 
       jQuery(settings.retro, this.element).hide();
       dialog.hide();
@@ -63,9 +64,7 @@
         }
 
         if( respuesta[1]  < settings.numAcierto ){
-          //jQuery(this).append("<div id='errorRetro' class='dialog' title='Completa todas las respuestas' style='display:none'><p>Escribe por lo menos "+settings.numAcierto+" diferencias para que puedas recibir retroalimentación.</p></div>")
-          jQuery( settings.textoRetro ).dialog("open");
-          //jQuery("div#errorRetro",this).dialog();
+          textoRetro.addClass([ "alert", "alert-danger" ]).fadeIn("slow");
         }
       });
     },

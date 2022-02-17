@@ -1,5 +1,5 @@
 /*
- *  Plugin que valida los formularios v2- 27/12/2021
+ *  Plugin que valida los formularios v2- 27/11/2021
  *  UNAM - DGCCH
  *  Jonathan Bailon Segura
  *  jonn59@gmail.com
@@ -14,7 +14,7 @@
       retro: ".retro",
       errorDialog: false,
       errorForm: false,
-      errorBackground: "#FCDBD6",
+      errorBackground: '#FCDBD6',
       errorBorder: "solid 1px #C82C27",
       numAcierto: 0,
       textoRetro: "#textoRetro",
@@ -41,21 +41,23 @@
 
       jQuery(settings.retro, this.element).hide();
       dialog.hide();
-
-      
+      textoRetro.hide();
+      errorForm.hide();
       
       jQuery(this.element).submit(function(event) {
         let respuesta = form.vFormulario(this);
 
         event.preventDefault();
         jQuery(settings.textoRetro, this).hide();
+        jQuery(".alert.alert-danger").hide();
         
         if ( respuesta[0] || ( ( respuesta[1]  >= settings.numAcierto ) && ( settings.numAcierto > 0 ) ) ) {
           jQuery(settings.retro, this).fadeIn("slow");
           jQuery(":submit, .alert-danger", this).hide();
         } else {
-          if (settings.errorDialog != false) {
-              dialog.addClass([ "alert", "alert-danger" ]).fadeIn("slow");
+          if (settings.errorDialog != false ) {
+              //dialog.addClass([ "alert", "alert-danger" ]).fadeIn("slow");
+              jQuery('input[type="submit"]', this).parent().prepend('<div class="alert alert-danger">Para recibir retroalimentación deberás escribir la respuesta.</div>');
           }
           if (settings.errorForm != false) {
             errorForm.addClass([ "alert", "alert-danger" ]).fadeIn("slow");
@@ -90,13 +92,12 @@
           retorno[0] = false;
           if ( settings.numAcierto == 0 ){
             $este.css({
-              'background' : settings.errorBackground,
-              'border' : settings.errorBorder
+              'cssText': 'background-color: '+settings.errorBackground+' !important; border: '+settings.errorBorder+' !important;'
             });
           }
         } else {
           $este.css({ // quitamos el fondo rojo si este esta lleno
-            'background' : '',
+            'background-color' : '',
             'border' : ''
           });
 
